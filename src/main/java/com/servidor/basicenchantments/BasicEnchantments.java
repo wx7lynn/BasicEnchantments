@@ -1,6 +1,7 @@
 package com.servidor.basicenchantments;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -25,7 +26,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // Bloquea el lapislázuli común en la mesa
+    // 1. Bloquea el lapislázuli común en la mesa de encantamientos
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -45,7 +46,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // Fuerza las 3 ofertas visibles
+    // 2. Mantiene habilitadas las 3 opciones visuales
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         int[] offers = event.getExpLevelCostsOffers();
@@ -54,7 +55,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         offers[2] = 3;
     }
 
-    // Procesa el encantamiento
+    // 3. Aplica el encantamiento y cobra el Lapislázuli especial
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
@@ -141,21 +142,20 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
     }
 
     private Enchantment getRandomValidEnchantment(ItemStack item) {
-        List<Enchantment> allEnchants = Arrays.asList(
-            Enchantment.PROTECTION_ENVIRONMENTAL, Enchantment.PROTECTION_FIRE, Enchantment.PROTECTION_FALL,
-            Enchantment.PROTECTION_EXPLOSIONS, Enchantment.PROTECTION_PROJECTILE, Enchantment.OXYGEN,
-            Enchantment.WATER_WORKER, Enchantment.THORNS, Enchantment.DEPTH_STRIDER, Enchantment.FROST_WALKER,
-            Enchantment.BINDING_CURSE, Enchantment.DAMAGE_ALL, Enchantment.DAMAGE_UNDEAD, Enchantment.DAMAGE_ARTHROPODS,
-            Enchantment.KNOCKBACK, Enchantment.FIRE_ASPECT, Enchantment.LOOT_BONUS_MOBS, Enchantment.SWEEPING_EDGE,
-            Enchantment.DIG_SPEED, Enchantment.SILK_TOUCH, Enchantment.DURABILITY, Enchantment.LOOT_BONUS_BLOCKS,
-            Enchantment.ARROW_DAMAGE, Enchantment.ARROW_KNOCKBACK, Enchantment.ARROW_FIRE, Enchantment.ARROW_INFINITE,
-            Enchantment.LUCK, Enchantment.LURE, Enchantment.LOYALTY, Enchantment.IMPALING, Enchantment.RIPTIDE,
-            Enchantment.CHANNELING, Enchantment.MULTISHOT, Enchantment.QUICK_CHARGE, Enchantment.PIERCING,
-            Enchantment.MENDING, Enchantment.VANISHING_CURSE
-        );
+        String[] enchantKeys = {
+            "protection", "fire_protection", "feather_falling", "blast_protection",
+            "projectile_protection", "respiration", "aqua_affinity", "thorns",
+            "depth_strider", "frost_walker", "sharpness", "smite", "bane_of_arthropods",
+            "knockback", "fire_aspect", "looting", "sweeping", "efficiency",
+            "silk_touch", "unbreaking", "fortune", "power", "punch", "flame",
+            "infinity", "luck_of_the_sea", "lure", "loyalty", "impaling",
+            "riptide", "channeling", "multishot", "quick_charge", "piercing",
+            "mending"
+        };
 
         List<Enchantment> valid = new ArrayList<>();
-        for (Enchantment ench : allEnchants) {
+        for (String key : enchantKeys) {
+            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(key));
             if (ench != null && ench.canEnchantItem(item)) {
                 valid.add(ench);
             }
