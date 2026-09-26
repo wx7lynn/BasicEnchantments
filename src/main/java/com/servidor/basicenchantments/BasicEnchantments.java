@@ -25,7 +25,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // 1. Evita colocar Lapislázuli vanilla en la ranura secundaria de la mesa
+    // Bloquea el lapislázuli vanilla
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -45,7 +45,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // 2. Mantiene las 3 opciones de la mesa activas
+    // Activa los tres botones en la mesa
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         int[] offers = event.getExpLevelCostsOffers();
@@ -54,14 +54,13 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         offers[2] = 3;
     }
 
-    // 3. Procesa el encantamiento respetando los niveles y el Lapislázuli especial
+    // Procesa el encantamiento y descuenta el Lapislázuli especial
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
         EnchantingInventory inv = (EnchantingInventory) event.getInventory();
         ItemStack lapisSlot = inv.getSecondary();
 
-        // Determinar qué botón se presionó evaluando la experiencia requerida
         int expCost = event.getExpLevelCost();
         int targetLevel = (expCost == 1) ? 1 : (expCost == 2) ? 2 : 3;
         int reqLapis = (targetLevel == 1) ? 2 : (targetLevel == 2) ? 4 : 6;
@@ -83,7 +82,6 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
 
         consumeSpecialLapis(inv, player, reqLapis);
 
-        // Limpia cualquier otro encantamiento y aplica ÚNICAMENTE 1
         event.getEnchantsToAdd().clear();
         event.getEnchantsToAdd().put(chosenEnchant, targetLevel);
 
@@ -144,12 +142,14 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
 
     private Enchantment getRandomValidEnchantment(ItemStack item) {
         List<Enchantment> valid = new ArrayList<>();
-        // En Paper 1.20.1 los encantamientos se obtienen del registro oficial
+        
+        // Forma compatible universal para obtener encantamientos en Paper/Spigot 1.20.1
         for (Enchantment ench : org.bukkit.Registry.ENCHANTMENT) {
-            if (ench.canEnchantItem(item)) {
+            if (ench != null && ench.canEnchantItem(item)) {
                 valid.add(ench);
             }
         }
+        
         if (valid.isEmpty()) return null;
         Collections.shuffle(valid);
         return valid.get(0);
