@@ -25,11 +25,10 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // 1. Desactiva el Lapislázuli vanilla para que no se pueda poner en el slot secundario de la mesa
+    // 1. Evita colocar Lapislázuli vanilla en la ranura secundaria de la mesa
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
-            // El slot 1 de la EnchantingInventory es la ranura del lapislázuli
             if (event.getRawSlot() == 1 || (event.isShiftClick() && event.getCurrentItem() != null && event.getCurrentItem().getType() == Material.LAPIS_LAZULI)) {
                 ItemStack item = event.getCursor();
                 if (event.isShiftClick()) item = event.getCurrentItem();
@@ -46,34 +45,33 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // 2. Mantiene visibles los 3 botones de la mesa de encantamientos
+    // 2. Mantiene las 3 opciones de la mesa activas
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         int[] offers = event.getExpLevelCostsOffers();
-        offers[0] = 1; // Habilita la ranura 1
-        offers[1] = 2; // Habilita la ranura 2
-        offers[2] = 3; // Habilita la ranura 3
+        offers[0] = 1;
+        offers[1] = 2;
+        offers[2] = 3;
     }
 
-    // 3. Procesa el encantamiento al hacer clic en cualquiera de las 3 opciones vanilla
+    // 3. Procesa el encantamiento respetando los niveles y el Lapislázuli especial
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
         EnchantingInventory inv = (EnchantingInventory) event.getInventory();
-        ItemStack lapisSlot = inv.getSecondary(); // Ítem en el slot de lapislázuli
+        ItemStack lapisSlot = inv.getSecondary();
 
-        int buttonPressed = event.whichButton(); // 0 = Slot 1, 1 = Slot 2, 2 = Slot 3
-        int reqLapis = (buttonPressed == 0) ? 2 : (buttonPressed == 1) ? 4 : 6;
-        int targetLevel = buttonPressed + 1; // Slot 1 -> Niv 1 | Slot 2 -> Niv 2 | Slot 3 -> Niv 3
+        // Determinar qué botón se presionó evaluando la experiencia requerida
+        int expCost = event.getExpLevelCost();
+        int targetLevel = (expCost == 1) ? 1 : (expCost == 2) ? 2 : 3;
+        int reqLapis = (targetLevel == 1) ? 2 : (targetLevel == 2) ? 4 : 6;
 
-        // Verificar Lapislázuli Especial en la ranura de la mesa o en el inventario del jugador
         if (!hasEnoughSpecialLapis(lapisSlot, player, reqLapis)) {
             event.setCancelled(true);
             player.sendMessage("§cNecesitas §b" + reqLapis + "x Lapislázuli Especial §cpara esta opción.");
             return;
         }
 
-        // Obtener un solo encantamiento compatible
         ItemStack targetItem = event.getItem();
         Enchantment chosenEnchant = getRandomValidEnchantment(targetItem);
 
@@ -83,10 +81,9 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
             return;
         }
 
-        // Descontar la cantidad exacta de Lapislázuli Especial requerida
         consumeSpecialLapis(inv, player, reqLapis);
 
-        // Limpiar encantamientos generados por el juego vanilla y aplicar ÚNICAMENTE 1
+        // Limpia cualquier otro encantamiento y aplica ÚNICAMENTE 1
         event.getEnchantsToAdd().clear();
         event.getEnchantsToAdd().put(chosenEnchant, targetLevel);
 
@@ -119,7 +116,6 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         int remaining = amount;
         ItemStack inSlot = inv.getSecondary();
 
-        // Primero consume del slot de lapislázuli de la mesa
         if (isSpecialLapis(inSlot)) {
             if (inSlot.getAmount() <= remaining) {
                 remaining -= inSlot.getAmount();
@@ -130,7 +126,6 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
             }
         }
 
-        // Si falta, consume del inventario del jugador
         if (remaining > 0) {
             for (ItemStack item : player.getInventory().getContents()) {
                 if (isSpecialLapis(item)) {
@@ -149,7 +144,8 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
 
     private Enchantment getRandomValidEnchantment(ItemStack item) {
         List<Enchantment> valid = new ArrayList<>();
-        for (Enchantment ench : Enchantment.values()) {
+        // En Paper 1.20.1 los encantamientos se obtienen del registro oficial
+        for (Enchantment ench : org.bukkit.Registry.ENCHANTMENT) {
             if (ench.canEnchantItem(item)) {
                 valid.add(ench);
             }
