@@ -1,0 +1,18 @@
+# Configuración de BasicEnchantments
+
+options:
+  # Botón superior en la mesa
+  option1:
+    exp_cost: 1
+    lapis_cost: 2
+    enchant_level: 1
+  # Botón del medio en la mesa
+  option2:
+    exp_cost: 2
+    lapis_cost: 4
+    enchant_level: 2
+  # Botón inferior en la mesa
+  option3:
+    exp_cost: 3
+    lapis_cost: 6
+    enchant_level: 3
