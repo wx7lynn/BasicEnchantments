@@ -25,7 +25,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // 1. Bloquea el lapislázuli común en la mesa
+    // Bloquea el lapislázuli común en la mesa
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -45,7 +45,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // 2. Fuerza las 3 ofertas visibles
+    // Fuerza las 3 ofertas visibles
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         int[] offers = event.getExpLevelCostsOffers();
@@ -54,7 +54,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         offers[2] = 3;
     }
 
-    // 3. Procesa el encantamiento
+    // Procesa el encantamiento
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
@@ -141,15 +141,24 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
     }
 
     private Enchantment getRandomValidEnchantment(ItemStack item) {
+        List<Enchantment> allEnchants = Arrays.asList(
+            Enchantment.PROTECTION_ENVIRONMENTAL, Enchantment.PROTECTION_FIRE, Enchantment.PROTECTION_FALL,
+            Enchantment.PROTECTION_EXPLOSIONS, Enchantment.PROTECTION_PROJECTILE, Enchantment.OXYGEN,
+            Enchantment.WATER_WORKER, Enchantment.THORNS, Enchantment.DEPTH_STRIDER, Enchantment.FROST_WALKER,
+            Enchantment.BINDING_CURSE, Enchantment.DAMAGE_ALL, Enchantment.DAMAGE_UNDEAD, Enchantment.DAMAGE_ARTHROPODS,
+            Enchantment.KNOCKBACK, Enchantment.FIRE_ASPECT, Enchantment.LOOT_BONUS_MOBS, Enchantment.SWEEPING_EDGE,
+            Enchantment.DIG_SPEED, Enchantment.SILK_TOUCH, Enchantment.DURABILITY, Enchantment.LOOT_BONUS_BLOCKS,
+            Enchantment.ARROW_DAMAGE, Enchantment.ARROW_KNOCKBACK, Enchantment.ARROW_FIRE, Enchantment.ARROW_INFINITE,
+            Enchantment.LUCK, Enchantment.LURE, Enchantment.LOYALTY, Enchantment.IMPALING, Enchantment.RIPTIDE,
+            Enchantment.CHANNELING, Enchantment.MULTISHOT, Enchantment.QUICK_CHARGE, Enchantment.PIERCING,
+            Enchantment.MENDING, Enchantment.VANISHING_CURSE
+        );
+
         List<Enchantment> valid = new ArrayList<>();
-        
-        // Uso de valores compatibles universales para 1.20.1
-        for (Enchantment ench : Enchantment.values()) {
-            try {
-                if (ench != null && ench.canEnchantItem(item)) {
-                    valid.add(ench);
-                }
-            } catch (Exception ignored) {}
+        for (Enchantment ench : allEnchants) {
+            if (ench != null && ench.canEnchantItem(item)) {
+                valid.add(ench);
+            }
         }
 
         if (valid.isEmpty()) return null;
