@@ -25,7 +25,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // Bloquea el lapislázuli vanilla
+    // 1. Bloquea el lapislázuli común en la mesa
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -45,7 +45,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // Activa los tres botones en la mesa
+    // 2. Fuerza las 3 ofertas visibles
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         int[] offers = event.getExpLevelCostsOffers();
@@ -54,7 +54,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         offers[2] = 3;
     }
 
-    // Procesa el encantamiento y descuenta el Lapislázuli especial
+    // 3. Procesa el encantamiento
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
@@ -143,13 +143,15 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
     private Enchantment getRandomValidEnchantment(ItemStack item) {
         List<Enchantment> valid = new ArrayList<>();
         
-        // Forma compatible universal para obtener encantamientos en Paper/Spigot 1.20.1
-        for (Enchantment ench : org.bukkit.Registry.ENCHANTMENT) {
-            if (ench != null && ench.canEnchantItem(item)) {
-                valid.add(ench);
-            }
+        // Uso de valores compatibles universales para 1.20.1
+        for (Enchantment ench : Enchantment.values()) {
+            try {
+                if (ench != null && ench.canEnchantItem(item)) {
+                    valid.add(ench);
+                }
+            } catch (Exception ignored) {}
         }
-        
+
         if (valid.isEmpty()) return null;
         Collections.shuffle(valid);
         return valid.get(0);
