@@ -1,0 +1,4 @@
+name: BasicEnchantments
+version: 1.0
+main: com.servidor.basicenchantments.BasicEnchantments
+api-version: 1.20
