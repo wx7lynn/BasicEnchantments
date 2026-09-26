@@ -4,6 +4,8 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
@@ -27,10 +29,29 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // 1. Bloquea el lapislázuli común
+    // Procesa el comando /basicenchantment o /be
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("basicenchantment")) {
+            if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+                if (sender.hasPermission("basicenchantments.admin")) {
+                    reloadConfig();
+                    sender.sendMessage("§a[BasicEnchantments] Configuración recargada correctamente.");
+                } else {
+                    sender.sendMessage("§cNo tienes permisos para usar este comando.");
+                }
+                return true;
+            }
+            sender.sendMessage("§cUso correcto: /" + label + " reload");
+            return true;
+        }
+        return false;
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -50,34 +71,35 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // 2. Fuerza que los 3 botones de la mesa siempre estén encendidos
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
         Enchantment dummy = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
         EnchantmentOffer[] offers = event.getOffers();
         
         for (int i = 0; i < 3; i++) {
-            int cost = i + 1; // Niveles 1, 2 y 3
+            int expCost = getConfig().getInt("options.option" + (i + 1) + ".exp_cost");
+            
             if (offers[i] == null) {
                 if (dummy != null) {
-                    offers[i] = new EnchantmentOffer(dummy, 1, cost);
+                    offers[i] = new EnchantmentOffer(dummy, 1, expCost);
                 }
             } else {
-                offers[i].setCost(cost);
+                offers[i].setCost(expCost);
             }
         }
     }
 
-    // 3. Procesa el encantamiento y descuenta los recursos
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
         EnchantingInventory inv = (EnchantingInventory) event.getInventory();
         ItemStack lapisSlot = inv.getSecondary();
 
-        int expCost = event.getExpLevelCost();
-        // Nivel 1 = 2 Lapis | Nivel 2 = 4 Lapis | Nivel 3 = 6 Lapis
-        int reqLapis = (expCost == 1) ? 2 : (expCost == 2) ? 4 : 6;
+        int button = event.whichButton();
+        String configPath = "options.option" + (button + 1) + ".";
+        
+        int reqLapis = getConfig().getInt(configPath + "lapis_cost");
+        int enchantLevel = getConfig().getInt(configPath + "enchant_level");
 
         if (!hasEnoughSpecialLapis(lapisSlot, player, reqLapis)) {
             event.setCancelled(true);
@@ -97,7 +119,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         consumeSpecialLapis(inv, player, reqLapis);
 
         event.getEnchantsToAdd().clear();
-        event.getEnchantsToAdd().put(chosenEnchant, expCost); // Aplica nivel 1, 2 o 3 según el botón
+        event.getEnchantsToAdd().put(chosenEnchant, enchantLevel);
 
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
     }
