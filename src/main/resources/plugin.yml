@@ -1,4 +1,10 @@
 name: BasicEnchantments
-version: 1.0
+version: 1.0-SNAPSHOT
 main: com.servidor.basicenchantments.BasicEnchantments
-api-version: 1.20
+api-version: '1.20'
+commands:
+  basicenchantment:
+    description: Comando principal del plugin
+    aliases: [be]
+    permission: basicenchantments.admin
+    permission-message: §cNo tienes permisos para usar este comando.
