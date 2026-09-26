@@ -2,8 +2,10 @@ package com.servidor.basicenchantments;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,7 +19,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class BasicEnchantments extends JavaPlugin implements Listener {
 
@@ -26,7 +30,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    // 1. Bloquea el lapislázuli común en la mesa de encantamientos
+    // 1. Bloquea el lapislázuli común
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() == InventoryType.ENCHANTING) {
@@ -46,16 +50,25 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         }
     }
 
-    // 2. Mantiene habilitadas las 3 opciones visuales
+    // 2. Fuerza que los 3 botones de la mesa siempre estén encendidos
     @EventHandler
     public void onPrepareEnchant(PrepareItemEnchantEvent event) {
-        int[] offers = event.getExpLevelCostsOffers();
-        offers[0] = 1;
-        offers[1] = 2;
-        offers[2] = 3;
+        Enchantment dummy = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"));
+        EnchantmentOffer[] offers = event.getOffers();
+        
+        for (int i = 0; i < 3; i++) {
+            int cost = i + 1; // Niveles 1, 2 y 3
+            if (offers[i] == null) {
+                if (dummy != null) {
+                    offers[i] = new EnchantmentOffer(dummy, 1, cost);
+                }
+            } else {
+                offers[i].setCost(cost);
+            }
+        }
     }
 
-    // 3. Aplica el encantamiento y cobra el Lapislázuli especial
+    // 3. Procesa el encantamiento y descuenta los recursos
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchantItem(EnchantItemEvent event) {
         Player player = event.getEnchanter();
@@ -63,8 +76,8 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         ItemStack lapisSlot = inv.getSecondary();
 
         int expCost = event.getExpLevelCost();
-        int targetLevel = (expCost == 1) ? 1 : (expCost == 2) ? 2 : 3;
-        int reqLapis = (targetLevel == 1) ? 2 : (targetLevel == 2) ? 4 : 6;
+        // Nivel 1 = 2 Lapis | Nivel 2 = 4 Lapis | Nivel 3 = 6 Lapis
+        int reqLapis = (expCost == 1) ? 2 : (expCost == 2) ? 4 : 6;
 
         if (!hasEnoughSpecialLapis(lapisSlot, player, reqLapis)) {
             event.setCancelled(true);
@@ -84,7 +97,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         consumeSpecialLapis(inv, player, reqLapis);
 
         event.getEnchantsToAdd().clear();
-        event.getEnchantsToAdd().put(chosenEnchant, targetLevel);
+        event.getEnchantsToAdd().put(chosenEnchant, expCost); // Aplica nivel 1, 2 o 3 según el botón
 
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.0f);
     }
@@ -142,7 +155,7 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
     }
 
     private Enchantment getRandomValidEnchantment(ItemStack item) {
-        String[] enchantKeys = {
+        String[] keys = {
             "protection", "fire_protection", "feather_falling", "blast_protection",
             "projectile_protection", "respiration", "aqua_affinity", "thorns",
             "depth_strider", "frost_walker", "sharpness", "smite", "bane_of_arthropods",
@@ -154,8 +167,8 @@ public final class BasicEnchantments extends JavaPlugin implements Listener {
         };
 
         List<Enchantment> valid = new ArrayList<>();
-        for (String key : enchantKeys) {
-            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(key));
+        for (String k : keys) {
+            Enchantment ench = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(k));
             if (ench != null && ench.canEnchantItem(item)) {
                 valid.add(ench);
             }
